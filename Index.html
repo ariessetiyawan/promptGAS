@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      background-image: radial-gradient(circle at top right, #1e3a8a, transparent 40%),
+                        radial-gradient(circle at bottom left, #0c4a6e, transparent 40%);
+      color: #e0f2fe;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+    }
+    .neon-input {
+      background: rgba(2, 6, 23, 0.5);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      color: #38bdf8;
+      transition: all 0.3s ease;
+    }
+    .neon-input:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+    }
+    .neon-button {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+      transition: all 0.3s ease;
+    }
+    .neon-button:hover:not(:disabled) {
+      box-shadow: 0 0 20px rgba(2, 132, 199, 0.8);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-6 flex flex-col items-center">
+
+  <div class="glass-panel w-full max-w-6xl rounded-xl p-8 mt-4">
+    <div class="flex items-center justify-between border-b border-sky-500/30 pb-4 mb-6">
+      <h1 class="text-3xl font-bold text-sky-400 tracking-wider">
+        <span class="text-sky-200">STRATEGIC</span> PROMPT GENERATOR <span class="text-sm font-normal text-sky-500 ml-2">v3.0</span>
+      </h1>
+      <div class="flex items-center space-x-2">
+        <div id="statusIndicator" class="w-3 h-3 rounded-full bg-sky-400 animate-pulse"></div>
+        <span id="statusText" class="text-xs text-sky-300 uppercase tracking-widest">System Booting...</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <div class="space-y-6">
+        
+        <div>
+          <label class="block text-sm text-sky-300 mb-2 uppercase tracking-wider">Tujuan Spesifik Aplikasi</label>
+          <textarea id="appDescription" rows="2" class="neon-input w-full rounded-lg p-3 text-sm placeholder-sky-700" placeholder="Contoh: Sistem POS komprehensif atau Dashboard Monitoring metrik klinis..."></textarea>
+        </div>
+
+        <div class="border border-sky-500/30 rounded-lg p-4 bg-slate-900/40">
+          <label class="block text-sm text-sky-300 mb-3 uppercase tracking-wider">Setup Skema Tabel GSheet</label>
+          <input type="text" id="dbSheetName" class="neon-input w-full rounded-lg p-2 text-sm mb-3" placeholder="Nama Tabel/Sheet (cth: Transaksi_Data)">
+          
+          <div class="flex space-x-2 mb-3">
+            <input type="text" id="colName" class="neon-input w-1/2 rounded-lg p-2 text-sm" placeholder="Nama Kolom">
+            <select id="colType" class="neon-input w-1/3 rounded-lg p-2 text-sm bg-slate-900">
+              <option value="String">String (Teks)</option>
+              <option value="Number">Number (Angka)</option>
+              <option value="Date">Date (Tanggal)</option>
+              <option value="Boolean">Boolean (Checkbox)</option>
+            </select>
+            <button onclick="addColumn()" class="neon-button text-white px-4 py-2 rounded-lg text-sm font-bold">+</button>
+          </div>
+          
+          <div id="schemaList" class="flex flex-wrap gap-2 mb-3 min-h-[40px] items-center text-sm text-sky-600/50">
+            Skema belum ditentukan...
+          </div>
+          
+          <button id="btnInitDb" onclick="initializeDatabase()" class="border border-sky-500 text-sky-400 hover:bg-sky-500 hover:text-slate-900 transition-colors py-2 px-4 rounded-lg font-semibold uppercase text-xs w-full tracking-wider">
+            Eksekusi Init Database Fisik
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-sm text-sky-300 mb-2 uppercase tracking-wider">Daftar Modul Aplikasi</label>
+          <div class="flex space-x-2 mb-3">
+            <input type="text" id="newFeature" class="neon-input w-full rounded-lg p-2 text-sm placeholder-sky-700" placeholder="Tambahkan modul/fitur baru...">
+            <button id="addBtn" onclick="addFeature()" class="neon-button text-white px-4 py-2 rounded-lg text-sm font-semibold" disabled>+</button>
+          </div>
+          <div class="bg-slate-900/50 p-4 rounded-lg border border-sky-500/20 max-h-32 overflow-y-auto">
+            <div id="featureList" class="flex flex-col space-y-2"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex flex-col h-full bg-slate-900/30 p-4 rounded-lg border border-sky-500/30">
+        
+        <label class="block text-sm text-sky-300 mb-2 uppercase tracking-wider">Pilih Fase Pengembangan (Divide & Conquer)</label>
+        <select id="phaseSelector" class="neon-input w-full rounded-lg p-3 text-sm font-semibold mb-4 bg-slate-900">
+          <option value="phase1">🚀 FASE 1: Pondasi Backend & CRUD Database (Code.gs)</option>
+          <option value="phase2">🎨 FASE 2: UI/UX Dashboard Command Center (Index.html)</option>
+          <option value="phase3">🔒 FASE 3: Logika Sistem, Keamanan SHA-256 & Session</option>
+          <option value="phase4">⚡ FASE 4: Optimasi Performa (CacheService & Drive API)</option>
+        </select>
+
+        <button onclick="generateTargetedPrompt()" class="neon-button w-full text-white py-3 rounded-lg font-bold text-md uppercase tracking-widest mb-4 shadow-[0_0_15px_rgba(14,165,233,0.5)]">
+          Generate Prompt Fase Terpilih
+        </button>
+        
+        <textarea id="generatedPrompt" class="neon-input w-full h-full min-h-[350px] rounded-lg p-4 text-sm font-mono leading-relaxed resize-none bg-slate-900/80" readonly placeholder="Prompt spesifik untuk di-copy ke AI akan muncul di sini..."></textarea>
+        
+        <button onclick="copyPrompt()" class="mt-4 border border-sky-400 text-sky-400 hover:bg-sky-400 hover:text-slate-900 transition-colors py-3 rounded-lg font-bold uppercase tracking-widest text-sm">
+          Copy Prompt Ke Clipboard
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let featureDB = [];
+    let schemaDB = []; 
+
+    document.addEventListener('DOMContentLoaded', () => {
+      google.script.run.withSuccessHandler(initializeData).getFeatures();
+    });
+
+    function initializeData(data) {
+      featureDB = data;
+      renderFeatures();
+      document.getElementById('statusText').innerText = 'System Online';
+      document.getElementById('statusIndicator').classList.remove('animate-pulse');
+      document.getElementById('addBtn').disabled = false;
+    }
+
+    function renderFeatures() {
+      const container = document.getElementById('featureList');
+      container.innerHTML = '';
+      featureDB.forEach((feature, index) => {
+        container.innerHTML += `
+          <div class="flex items-center space-x-3 group cursor-pointer">
+            <input type="checkbox" id="feat_${index}" value="${feature}" checked class="w-4 h-4 accent-sky-500 bg-slate-800 border-sky-500/50 rounded">
+            <label for="feat_${index}" class="text-sm text-sky-100 group-hover:text-sky-300 transition-colors cursor-pointer leading-tight">${feature}</label>
+          </div>`;
+      });
+    }
+
+    function addFeature() {
+      const input = document.getElementById('newFeature');
+      const val = input.value.trim();
+      if (val) {
+        document.getElementById('statusText').innerText = 'Menyimpan...';
+        google.script.run.withSuccessHandler((res) => {
+          featureDB = res; renderFeatures(); input.value = "";
+          document.getElementById('statusText').innerText = 'System Online';
+        }).saveFeature(val);
+      }
+    }
+
+    function addColumn() {
+      const nameInput = document.getElementById('colName');
+      const typeInput = document.getElementById('colType');
+      if(nameInput.value.trim() !== "") {
+        schemaDB.push({ name: nameInput.value.trim().replace(/\s+/g, '_'), type: typeInput.value });
+        nameInput.value = ""; renderSchema();
+      }
+    }
+
+    function renderSchema() {
+      const container = document.getElementById('schemaList');
+      if (schemaDB.length === 0) { container.innerHTML = "Skema belum ditentukan..."; return; }
+      container.innerHTML = schemaDB.map(col => `<span class="bg-sky-900/50 border border-sky-500/50 text-sky-200 px-3 py-1 rounded-full text-xs">${col.name} <i class="text-sky-400">(${col.type})</i></span>`).join('');
+    }
+
+    function initializeDatabase() {
+      const sheetName = document.getElementById('dbSheetName').value.trim() || 'Database_Utama';
+      if(schemaDB.length === 0) { alert("Tambahkan minimal 1 kolom untuk skema!"); return; }
+      const btn = document.getElementById('btnInitDb');
+      btn.innerText = "Mengeksekusi..."; btn.disabled = true;
+      google.script.run.withSuccessHandler((res) => {
+        alert(res); btn.innerText = "Eksekusi Init Database Fisik"; btn.disabled = false;
+      }).initAppDatabase(sheetName, schemaDB);
+    }
+
+    function generateTargetedPrompt() {
+      const phase = document.getElementById('phaseSelector').value;
+      const desc = document.getElementById('appDescription').value || '[Aplikasi Belum Didefinisikan]';
+      const sheetName = document.getElementById('dbSheetName').value.trim() || 'Database_Utama';
+      const features = Array.from(document.querySelectorAll('#featureList input[type="checkbox"]:checked')).map(cb => `- ${cb.value}`).join('\n');
+      const schemaString = schemaDB.length > 0 ? schemaDB.map((col, idx) => `${idx + 1}. ${col.name} (${col.type})`).join('\n') : "Belum didefinisikan.";
+
+      let promptText = "";
+
+      if (phase === "phase1") {
+        promptText = `Bertindaklah sebagai Senior Backend Developer spesialis Google Apps Script. 
+Saya sedang membangun aplikasi dengan spesifikasi berikut:
+Tujuan: ${desc}
+
+Saya membutuhkan pondasi backend (Code.gs) yang sangat solid.
+Gunakan nama sheet: "${sheetName}"
+Dengan struktur kolom:
+${schemaString}
+
+Tugas Anda:
+1. Buatkan fungsi doGet() standar untuk merender Index.html.
+2. Buatkan fungsi koneksi ke Spreadsheet.
+3. Buatkan fungsi CRUD (Create, Read, Update, Delete) lengkap yang mengambil dan menyimpan data berdasarkan struktur kolom di atas.
+4. Pastikan kode memiliki penanganan error (try/catch) yang baik.
+Berikan kodenya saja secara lengkap tanpa penjelasan panjang lebar.`;
+
+      } else if (phase === "phase2") {
+        promptText = `Bertindaklah sebagai UI/UX Engineer spesialis Tailwind CSS.
+Melanjutkan kode backend sebelumnya untuk aplikasi: ${desc}
+
+Tugas Anda sekarang adalah membangun antarmuka frontend (Index.html).
+Spesifikasi Desain:
+1. Gunakan pendekatan "Dashboard Command Center" fungsional dengan tema dark-mode aksen biru.
+2. Aplikasikan efek Glassmorphism yang tajam (backdrop-filter: blur, border transparan).
+3. Buat layout agar sepenuhnya responsif (terutama penanganan sidebar atau modal untuk versi mobile).
+
+Modul yang perlu dirender di UI:
+${features}
+
+Sistem interaksi:
+Jangan gunakan form submit tradisional. Gunakan JavaScript asinkron memanggil 'google.script.run' dengan withSuccessHandler agar aplikasi terasa seperti Single Page Application (SPA). Berikan file HTML lengkap dengan CSS internal dan script klien.`;
+
+      } else if (phase === "phase3") {
+        promptText = `Bertindaklah sebagai Security & Systems Architect.
+Berdasarkan aplikasi yang sedang kita bangun (${desc}), saya ingin menambahkan lapisan keamanan dan logika state.
+
+Tugas Anda, berikan pembaruan atau penambahan kode (baik di sisi Code.gs maupun Index.html) untuk:
+1. Membuat fungsi hash SHA-256 di backend untuk mengamankan data sandi.
+2. Membuat sistem autentikasi sederhana (Login Modal).
+3. Menggunakan localStorage di JavaScript klien untuk menyimpan sesi login pengguna.
+4. Pastikan pengguna yang tidak memiliki sesi tidak dapat merender atau memanggil fungsi pengambilan data utama.
+
+Berikan instruksi jelas bagian mana dari kode lama yang harus saya timpa atau tambahkan.`;
+
+      } else if (phase === "phase4") {
+        promptText = `Bertindaklah sebagai Performance Engineer untuk Google Apps Script.
+Aplikasi kita (${desc}) memerlukan optimasi tingkat produksi.
+
+Berikan panduan dan potongan kode lanjutan untuk mengimplementasikan:
+1. Pembacaan Data Cepat: Bungkus fungsi 'Read' data utama di backend menggunakan CacheService dengan kadaluarsa 300 detik agar tidak membebani limit Spreadsheet.
+2. Invalidasi Cache: Tambahkan logika agar setiap kali fungsi 'Create', 'Update', atau 'Delete' dieksekusi, sistem otomatis menghapus cache yang lama.
+3. [Opsional] Jika aplikasi ini membutuhkan manajemen file (seperti gambar produk), buatkan fungsi backend terpisah yang dapat menerima string Base64 dari frontend dan mengunggahnya langsung menjadi file .jpg ke Google Drive (DriveApp).`;
+      }
+
+      document.getElementById('generatedPrompt').value = promptText;
+    }
+
+    function copyPrompt() {
+      const copyText = document.getElementById("generatedPrompt");
+      copyText.select();
+      document.execCommand("copy");
+      const btn = event.target;
+      const originalText = btn.innerText;
+      btn.innerText = "PROMPT TERSALIN! SIAP DI-PASTE KE AI";
+      setTimeout(() => { btn.innerText = originalText; }, 2000);
+    }
+  </script>
+</body>
+</html>
